@@ -1,0 +1,10 @@
+apiVersion: ekstools.devops.automation/v1alpha1
+kind: Ekswatch
+metadata:
+  labels:
+    app.kubernetes.io/name: ekswatch-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: ekswatch-sample
+spec:
+  accountsToWatch:
+    - accountID: "3123812937182391" 
