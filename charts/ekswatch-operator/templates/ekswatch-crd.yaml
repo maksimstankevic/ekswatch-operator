@@ -60,6 +60,12 @@ spec:
                       items:
                         type: string
                       type: array
+                    roleName:
+                      description: |-
+                        RoleName is the name of the role which should be used to assume
+                        the role in the target account, if not specified, the default
+                        role named ekswatch will be used
+                      type: string
                   required:
                   - accountID
                   type: object
