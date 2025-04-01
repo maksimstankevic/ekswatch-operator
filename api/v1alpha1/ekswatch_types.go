@@ -30,7 +30,11 @@ type Account struct {
 	AccountID string `json:"accountID"`
 	// ClusterNameRegex is the regex for cluster names that should be synced
 	// to git repository
-	ClusterNameRegex string `json:"clusterNameRegex,omitempty"`
+	ClusterNameRegex []string `json:"clusterNameRegex,omitempty"`
+	// RoleName is the name of the role which should be used to assume
+	// the role in the target account, if not specified, the default
+	// role named ekswatch will be used
+	RoleName string `json:"roleName,omitempty"`
 }
 
 // EkswatchSpec defines the desired state of Ekswatch

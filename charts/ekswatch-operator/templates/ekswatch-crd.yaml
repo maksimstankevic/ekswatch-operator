@@ -57,7 +57,9 @@ spec:
                       description: |-
                         ClusterNameRegex is the regex for cluster names that should be synced
                         to git repository
-                      type: string
+                      items:
+                        type: string
+                      type: array
                   required:
                   - accountID
                   type: object
