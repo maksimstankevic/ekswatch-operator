@@ -1,0 +1,48 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ekswatch-operator.fullname" . }}-manager-role
+  labels:
+  {{- include "ekswatch-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ekstools.devops.automation
+  resources:
+  - ekswatches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ekstools.devops.automation
+  resources:
+  - ekswatches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ekstools.devops.automation
+  resources:
+  - ekswatches/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ekswatch-operator.fullname" . }}-manager-rolebinding
+  labels:
+  {{- include "ekswatch-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "ekswatch-operator.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "ekswatch-operator.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'

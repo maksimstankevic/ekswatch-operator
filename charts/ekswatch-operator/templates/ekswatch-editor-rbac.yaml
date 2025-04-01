@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ekswatch-operator.fullname" . }}-ekswatch-editor-role
+  labels:
+  {{- include "ekswatch-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ekstools.devops.automation
+  resources:
+  - ekswatches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ekstools.devops.automation
+  resources:
+  - ekswatches/status
+  verbs:
+  - get
