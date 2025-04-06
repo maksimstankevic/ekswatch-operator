@@ -18,7 +18,14 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -55,6 +62,28 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	logging.Info("Reconciling Ekswatch")
 
+	// Fetch the Ekswatch instance
+	var ekswatch ekstoolsv1alpha1.Ekswatch
+	if err := r.Get(ctx, req.NamespacedName, &ekswatch); err != nil {
+		logging.Error(err, "unable to fetch Ekswatch")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	logging.Info("Fetched Ekswatch", "accounts", ekswatch.Spec.AccountsToWatch)
+
+	for _, account := range ekswatch.Spec.AccountsToWatch {
+		logging.Info("Listing EKS clusters for account", "accountID", account.AccountID)
+
+		// List EKS clusters
+		clusterNames, err := listEKSClusters(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"))
+		if err != nil {
+			logging.Error(err, "failed to list EKS clusters")
+			return ctrl.Result{}, err
+		}
+
+		logging.Info("EKS clusters found", "clusters", clusterNames)
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -63,4 +92,49 @@ func (r *EkswatchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ekstoolsv1alpha1.Ekswatch{}).
 		Complete(r)
+}
+
+func listEKSClusters(accessKeyID string, secretAccessKey string) ([]string, error) {
+	// Create a new AWS session
+	sess, err := session.NewSession(&aws.Config{
+		Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
+		Region:      aws.String("eu-west-1"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	// Get all available regions
+	ec2Svc := ec2.New(sess)
+	regionsOutput, err := ec2Svc.DescribeRegions(&ec2.DescribeRegionsInput{
+		RegionNames: []*string{aws.String("eu-west-1")},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe regions: %w", err)
+	}
+
+	var clusterNames []string
+
+	// Iterate over all regions and list EKS clusters
+	for _, region := range regionsOutput.Regions {
+		regionName := aws.StringValue(region.RegionName)
+		eksSvc := eks.New(sess, &aws.Config{Region: aws.String(regionName)})
+
+		listClustersInput := &eks.ListClustersInput{}
+		for {
+			listClustersOutput, err := eksSvc.ListClusters(listClustersInput)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list clusters in region %s: %w", regionName, err)
+			}
+
+			clusterNames = append(clusterNames, aws.StringValueSlice(listClustersOutput.Clusters)...)
+
+			if listClustersOutput.NextToken == nil {
+				break
+			}
+			listClustersInput.NextToken = listClustersOutput.NextToken
+		}
+	}
+
+	return clusterNames, nil
 }

@@ -63,6 +63,17 @@ spec:
         args:
           - --leader-elect
           - --health-probe-bind-address=:8081
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: aws-secret
+                key: accessKeyId
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws-secret
+                key: secretAccessKey
         image: controller:latest
         name: manager
         securityContext:
