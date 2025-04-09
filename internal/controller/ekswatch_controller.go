@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -81,7 +82,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		wg.Add(1)
 		go func(i int, account ekstoolsv1alpha1.Account) {
 			defer wg.Done()
-			allErrors[i] = listEKSClusters(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, &allClusters[i])
+			allErrors[i] = listEKSClusters(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, allClusters[i])
 		}(i, account)
 	}
 
@@ -94,7 +95,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -104,7 +105,7 @@ func (r *EkswatchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func listEKSClusters(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string, clusters *[]string) error {
+func listEKSClusters(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string, clusters []string) error {
 
 	// build complete role ARN
 	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, roleToAssume)
@@ -160,7 +161,7 @@ func listEKSClusters(accessKeyID string, secretAccessKey string, accountId strin
 				return fmt.Errorf("failed to list clusters in region %s: %w", regionName, err)
 			}
 
-			*clusters = append(*clusters, aws.StringValueSlice(listClustersOutput.Clusters)...)
+			clusters = append(clusters, aws.StringValueSlice(listClustersOutput.Clusters)...)
 
 			if listClustersOutput.NextToken == nil {
 				break
@@ -169,8 +170,8 @@ func listEKSClusters(accessKeyID string, secretAccessKey string, accountId strin
 		}
 	}
 
-	fmt.Fprintf(os.Stdout, "Found %d clusters in account %s\n", len(*clusters), accountId)
-	fmt.Fprintf(os.Stdout, "Clusters: %v\n", *clusters)
+	fmt.Fprintf(os.Stdout, "Found %d clusters in account %s\n", len(clusters), accountId)
+	fmt.Fprintf(os.Stdout, "Clusters: %v\n", clusters)
 
 	return nil
 }
