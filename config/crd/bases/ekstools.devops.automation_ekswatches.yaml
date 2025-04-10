@@ -75,6 +75,68 @@ spec:
           status:
             description: EkswatchStatus defines the observed state of Ekswatch
             properties:
+              clusterCount:
+                description: ClusterCount is the number of clusters in the watched
+                  accounts
+                type: integer
+              clusterCountByAccount:
+                additionalProperties:
+                  type: integer
+                description: ClusterCountByAccount is the number of clusters in the
+                  watched accounts
+                type: object
+              clusterCountByRegion:
+                additionalProperties:
+                  type: integer
+                description: ClusterCountByRegion is the number of clusters in the
+                  watched accounts
+                type: object
+              clusterCountByStatus:
+                additionalProperties:
+                  type: integer
+                description: ClusterCountByStatus is the number of clusters in the
+                  watched accounts
+                type: object
+              clusters:
+                description: Clusters is the list of clusters in the watched accounts
+                items:
+                  description: Cluster represents an EKS cluster with its name and
+                    region
+                  properties:
+                    account:
+                      description: |-
+                        Account carries AWS Account information and regex for cluster names
+                        which should be synced to git repository
+                      properties:
+                        accountID:
+                          description: AccountID is the AWS Account ID
+                          type: string
+                        clusterNameRegex:
+                          description: |-
+                            ClusterNameRegex is the regex for cluster names that should be synced
+                            to git repository
+                          items:
+                            type: string
+                          type: array
+                        roleName:
+                          description: |-
+                            RoleName is the name of the role which should be used to assume
+                            the role in the target account, if not specified, the default
+                            role named ekswatch will be used
+                          type: string
+                      required:
+                      - accountID
+                      type: object
+                    name:
+                      type: string
+                    status:
+                      type: string
+                  required:
+                  - account
+                  - name
+                  - status
+                  type: object
+                type: array
               conditions:
                 description: |-
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster

@@ -37,6 +37,13 @@ type Account struct {
 	RoleName string `json:"roleName,omitempty"`
 }
 
+// Cluster represents an EKS cluster with its name and region
+type Cluster struct {
+	Name    string        `json:"name"`
+	Status  ClusterStatus `json:"status"`
+	Account Account       `json:"account"`
+}
+
 // EkswatchSpec defines the desired state of Ekswatch
 type EkswatchSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -74,6 +81,16 @@ type EkswatchStatus struct {
 	LastSyncedClusters []string `json:"lastSyncedClusters,omitempty"`
 	// LastSyncedClustersCount is the last count of clusters synced to the git repository
 	LastSyncedClustersCount int `json:"lastSyncedClustersCount,omitempty"`
+	// Clusters is the list of clusters in the watched accounts
+	Clusters []Cluster `json:"clusters,omitempty"`
+	// ClusterCount is the number of clusters in the watched accounts
+	ClusterCount int `json:"clusterCount,omitempty"`
+	// ClusterCountByAccount is the number of clusters in the watched accounts
+	ClusterCountByAccount map[string]int `json:"clusterCountByAccount,omitempty"`
+	// ClusterCountByRegion is the number of clusters in the watched accounts
+	ClusterCountByRegion map[string]int `json:"clusterCountByRegion,omitempty"`
+	// ClusterCountByStatus is the number of clusters in the watched accounts
+	ClusterCountByStatus map[string]int `json:"clusterCountByStatus,omitempty"`
 }
 
 // +kubebuilder:object:root=true

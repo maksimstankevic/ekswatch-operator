@@ -82,11 +82,14 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		wg.Add(1)
 		go func(i int, account ekstoolsv1alpha1.Account) {
 			defer wg.Done()
-			allErrors[i] = listEKSClusters(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, allClusters[i])
+			allErrors[i] = listEKSClusters(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, &allClusters[i])
 		}(i, account)
 	}
 
 	wg.Wait()
+
+	// All EKS listing goroutines are done - timestamp
+	logging.Info("All EKS listing goroutines are done", "time", time.Now())
 
 	// Check for errors
 	for i, err := range allErrors {
@@ -94,6 +97,30 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			logging.Info("Error listing EKS clusters in account: " + ekswatch.Spec.AccountsToWatch[i].AccountID)
 		}
 	}
+
+	// List all clusters in all accounts
+	logging.Info("All clusters", "clusters", allClusters)
+
+	// Update the status of the Ekswatch instance
+	ekswatch.Status.Clusters = make([]ekstoolsv1alpha1.Cluster, 0)
+	for i, account := range ekswatch.Spec.AccountsToWatch {
+		for _, cluster := range allClusters[i] {
+			ekswatch.Status.Clusters = append(ekswatch.Status.Clusters, ekstoolsv1alpha1.Cluster{
+				Name:   cluster,
+				Status: ekstoolsv1alpha1.ClusterStatusActive,
+				Account: ekstoolsv1alpha1.Account{
+					AccountID: account.AccountID,
+					RoleName:  account.RoleName,
+				},
+			})
+		}
+	}
+	// Set the status of the Ekswatch instance
+	if err := r.Status().Update(ctx, &ekswatch); err != nil {
+		logging.Error(err, "unable to update Ekswatch status")
+		return ctrl.Result{}, err
+	}
+	logging.Info("Updated Ekswatch status", "status", ekswatch.Status)
 
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
@@ -105,7 +132,7 @@ func (r *EkswatchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func listEKSClusters(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string, clusters []string) error {
+func listEKSClusters(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string, clusters *[]string) error {
 
 	// build complete role ARN
 	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, roleToAssume)
@@ -161,7 +188,7 @@ func listEKSClusters(accessKeyID string, secretAccessKey string, accountId strin
 				return fmt.Errorf("failed to list clusters in region %s: %w", regionName, err)
 			}
 
-			clusters = append(clusters, aws.StringValueSlice(listClustersOutput.Clusters)...)
+			*clusters = append(*clusters, aws.StringValueSlice(listClustersOutput.Clusters)...)
 
 			if listClustersOutput.NextToken == nil {
 				break
@@ -169,9 +196,6 @@ func listEKSClusters(accessKeyID string, secretAccessKey string, accountId strin
 			listClustersInput.NextToken = listClustersOutput.NextToken
 		}
 	}
-
-	fmt.Fprintf(os.Stdout, "Found %d clusters in account %s\n", len(clusters), accountId)
-	fmt.Fprintf(os.Stdout, "Clusters: %v\n", clusters)
 
 	return nil
 }
