@@ -94,7 +94,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// Check for errors
 	for i, err := range allErrors {
 		if err != nil {
-			logging.Info("Error listing EKS clusters in account: " + ekswatch.Spec.AccountsToWatch[i].AccountID)
+			logging.Error(err, "Error listing EKS clusters in account: "+ekswatch.Spec.AccountsToWatch[i].AccountID)
 		}
 	}
 
