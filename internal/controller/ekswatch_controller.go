@@ -75,14 +75,17 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	logging.Info("Fetched Ekswatch", "accounts", ekswatch.Spec.AccountsToWatch)
 
 	var allClusters = make([][]string, len(ekswatch.Spec.AccountsToWatch))
-	var allErrors = make([]error, len(ekswatch.Spec.AccountsToWatch))
+	var allAuthErrors = make([]error, len(ekswatch.Spec.AccountsToWatch))
+	var allListingErrors = make([]error, len(ekswatch.Spec.AccountsToWatch))
 	wg := sync.WaitGroup{}
 
 	for i, account := range ekswatch.Spec.AccountsToWatch {
 		wg.Add(1)
 		go func(i int, account ekstoolsv1alpha1.Account) {
 			defer wg.Done()
-			allErrors[i] = listEKSClusters(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, &allClusters[i])
+			var sess *session.Session
+			sess, allAuthErrors[i] = getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName)
+			allListingErrors[i] = listEKSClusters(sess, &allClusters[i])
 		}(i, account)
 	}
 
@@ -92,7 +95,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	logging.Info("All EKS listing goroutines are done", "time", time.Now())
 
 	// Check for errors
-	for i, err := range allErrors {
+	for i, err := range allAuthErrors {
 		if err != nil {
 			logging.Error(err, "Error listing EKS clusters in account: "+ekswatch.Spec.AccountsToWatch[i].AccountID)
 		}
@@ -132,42 +135,7 @@ func (r *EkswatchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func listEKSClusters(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string, clusters *[]string) error {
-
-	// build complete role ARN
-	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, roleToAssume)
-
-	// Create a new AWS session
-	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
-		Region:      aws.String("eu-west-1"),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create AWS session: %w", err)
-	}
-
-	// Assume the specified role
-	stsSvc := sts.New(sess)
-	assumeRoleOutput, err := stsSvc.AssumeRole(&sts.AssumeRoleInput{
-		RoleArn:         aws.String(roleArn),
-		RoleSessionName: aws.String("ekswatch-session"),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to assume role: %w", err)
-	}
-
-	// Create a new session with the assumed role credentials
-	sess, err = session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(
-			aws.StringValue(assumeRoleOutput.Credentials.AccessKeyId),
-			aws.StringValue(assumeRoleOutput.Credentials.SecretAccessKey),
-			aws.StringValue(assumeRoleOutput.Credentials.SessionToken),
-		),
-		Region: aws.String("eu-west-1"),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create session with assumed role: %w", err)
-	}
+func listEKSClusters(sess *session.Session, clusters *[]string) error {
 
 	// Get all available regions
 	ec2Svc := ec2.New(sess)
@@ -198,4 +166,43 @@ func listEKSClusters(accessKeyID string, secretAccessKey string, accountId strin
 	}
 
 	return nil
+}
+
+func getCredsViaSts(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string) (*session.Session, error) {
+
+	// build complete role ARN
+	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, roleToAssume)
+
+	// Create a new AWS session
+	sess, err := session.NewSession(&aws.Config{
+		Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
+		Region:      aws.String("eu-west-1"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AWS session: %w", err)
+	}
+
+	// Assume the specified role
+	stsSvc := sts.New(sess)
+	assumeRoleOutput, err := stsSvc.AssumeRole(&sts.AssumeRoleInput{
+		RoleArn:         aws.String(roleArn),
+		RoleSessionName: aws.String("ekswatch-session"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to assume role: %w", err)
+	}
+
+	// Create a new session with the assumed role credentials
+	sess, err = session.NewSession(&aws.Config{
+		Credentials: credentials.NewStaticCredentials(
+			aws.StringValue(assumeRoleOutput.Credentials.AccessKeyId),
+			aws.StringValue(assumeRoleOutput.Credentials.SecretAccessKey),
+			aws.StringValue(assumeRoleOutput.Credentials.SessionToken),
+		),
+		Region: aws.String("eu-west-1"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session with assumed role: %w", err)
+	}
+	return sess, nil
 }
