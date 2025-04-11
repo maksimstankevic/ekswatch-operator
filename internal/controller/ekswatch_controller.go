@@ -94,8 +94,15 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// All EKS listing goroutines are done - timestamp
 	logging.Info("All EKS listing goroutines are done", "time", time.Now())
 
-	// Check for errors
+	// Check for AUTH errors
 	for i, err := range allAuthErrors {
+		if err != nil {
+			logging.Error(err, "Error getting STS creds for account: "+ekswatch.Spec.AccountsToWatch[i].AccountID)
+		}
+	}
+
+	// Check for LISTING errors
+	for i, err := range allListingErrors {
 		if err != nil {
 			logging.Error(err, "Error listing EKS clusters in account: "+ekswatch.Spec.AccountsToWatch[i].AccountID)
 		}
