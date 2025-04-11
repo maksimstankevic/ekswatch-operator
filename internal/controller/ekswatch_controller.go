@@ -85,6 +85,9 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			defer wg.Done()
 			var sess *session.Session
 			sess, allAuthErrors[i] = getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName)
+			if sess == nil {
+				return
+			}
 			allListingErrors[i] = listEKSClusters(sess, &allClusters[i])
 		}(i, account)
 	}
