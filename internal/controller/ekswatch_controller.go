@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -113,6 +114,24 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// List all clusters in all accounts
 	logging.Info("All clusters", "clusters", allClusters)
+
+	// Get creds for listing k8s secrets
+
+	sess, err := getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ekswatch.Spec.K8sSecretsLocation.AccountId, ekswatch.Spec.K8sSecretsLocation.RoleName)
+	if err != nil {
+		logging.Error(err, "Error getting STS creds for listing k8s secrets")
+		return ctrl.Result{}, err
+	}
+
+	// Get the list of k8s secrets
+	k8sSecrets, err := listSecrets(sess, ekswatch.Spec.K8sSecretsLocation.Region)
+	if err != nil {
+		logging.Error(err, "Error listing k8s secrets")
+		return ctrl.Result{}, err
+	}
+
+	// List k8s secrets
+	logging.Info("K8s secrets", "secrets", k8sSecrets)
 
 	// Update the status of the Ekswatch instance
 	ekswatch.Status.Clusters = make([]ekstoolsv1alpha1.Cluster, 0)
@@ -215,4 +234,26 @@ func getCredsViaSts(accessKeyID string, secretAccessKey string, accountId string
 		return nil, fmt.Errorf("failed to create session with assumed role: %w", err)
 	}
 	return sess, nil
+}
+
+func listSecrets(sess *session.Session, region string) ([]string, error) {
+
+	// Create a new Secrets Manager client
+	svc := secretsmanager.New(sess, &aws.Config{Region: aws.String(region)})
+
+	// List all secrets
+	input := &secretsmanager.ListSecretsInput{}
+	var secrets []string
+	err := svc.ListSecretsPages(input, func(page *secretsmanager.ListSecretsOutput, lastPage bool) bool {
+		for _, secret := range page.SecretList {
+			secrets = append(secrets, aws.StringValue(secret.Name))
+		}
+		return !lastPage
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list secrets: %w", err)
+	}
+
+	return secrets, nil
+
 }

@@ -69,8 +69,25 @@ spec:
                   - accountID
                   type: object
                 type: array
+              k8sSecretsLocation:
+                description: |-
+                  K8sSecretsLocation is the location of the k8s secrets
+                  for this isnatnce of ekswatch
+                properties:
+                  accountID:
+                    type: string
+                  region:
+                    type: string
+                  roleName:
+                    type: string
+                required:
+                - accountID
+                - region
+                - roleName
+                type: object
             required:
             - accountsToWatch
+            - k8sSecretsLocation
             type: object
           status:
             description: EkswatchStatus defines the observed state of Ekswatch

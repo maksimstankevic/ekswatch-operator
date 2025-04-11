@@ -44,6 +44,14 @@ type Cluster struct {
 	Account Account       `json:"account"`
 }
 
+// k8s secrets location for ekswatch carries AWS Account ID and region
+// where k8s secrets are stored
+type K8sSecretsLocation struct {
+	AccountId string `json:"accountID"`
+	Region    string `json:"region"`
+	RoleName  string `json:"roleName"`
+}
+
 // EkswatchSpec defines the desired state of Ekswatch
 type EkswatchSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -53,6 +61,9 @@ type EkswatchSpec struct {
 	// for EKS clusters. The controller will sync the cluster names
 	// matching the regex to the git repository.
 	AccountsToWatch []Account `json:"accountsToWatch"`
+	// K8sSecretsLocation is the location of the k8s secrets
+	// for this isnatnce of ekswatch
+	K8sSecretsLocation K8sSecretsLocation `json:"k8sSecretsLocation"`
 }
 
 // EkswatchStatus defines the observed state of Ekswatch
