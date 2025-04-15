@@ -93,6 +93,29 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}(i, account)
 	}
 
+	// Get creds for listing k8s secrets
+
+	sess, err := getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ekswatch.Spec.K8sSecretsLocation.AccountId, ekswatch.Spec.K8sSecretsLocation.RoleName)
+	if err != nil {
+		logging.Error(err, "Error getting STS creds for listing k8s secrets")
+		return ctrl.Result{}, err
+	}
+
+	var k8sSecrets []string
+
+	wg.Add(1)
+	go func(secrets []string, sess *session.Session) error {
+		defer wg.Done()
+		// Get the list of k8s secrets
+		var err error
+		k8sSecrets, err = listSecrets(sess, ekswatch.Spec.K8sSecretsLocation.Region)
+		if err != nil {
+			logging.Error(err, "Error listing k8s secrets")
+			return err
+		}
+		return nil
+	}(k8sSecrets, sess)
+
 	wg.Wait()
 
 	// All EKS listing goroutines are done - timestamp
@@ -114,21 +137,6 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// List all clusters in all accounts
 	logging.Info("All clusters", "clusters", allClusters)
-
-	// Get creds for listing k8s secrets
-
-	sess, err := getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ekswatch.Spec.K8sSecretsLocation.AccountId, ekswatch.Spec.K8sSecretsLocation.RoleName)
-	if err != nil {
-		logging.Error(err, "Error getting STS creds for listing k8s secrets")
-		return ctrl.Result{}, err
-	}
-
-	// Get the list of k8s secrets
-	k8sSecrets, err := listSecrets(sess, ekswatch.Spec.K8sSecretsLocation.Region)
-	if err != nil {
-		logging.Error(err, "Error listing k8s secrets")
-		return ctrl.Result{}, err
-	}
 
 	// List k8s secrets
 	logging.Info("K8s secrets", "secrets", k8sSecrets)
