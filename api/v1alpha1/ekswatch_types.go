@@ -39,9 +39,11 @@ type Account struct {
 
 // Cluster represents an EKS cluster with its name and region
 type Cluster struct {
-	Name    string        `json:"name"`
-	Status  ClusterStatus `json:"status"`
-	Account Account       `json:"account"`
+	Name        string        `json:"name"`
+	Status      ClusterStatus `json:"status"`
+	Account     Account       `json:"account"`
+	HasSecrets  bool          `json:"hasSecret,omitempty"`
+	SecretNames []string      `json:"secretNames,omitempty"`
 }
 
 // k8s secrets location for ekswatch carries AWS Account ID and region

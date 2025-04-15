@@ -144,8 +144,14 @@ spec:
                       required:
                       - accountID
                       type: object
+                    hasSecret:
+                      type: boolean
                     name:
                       type: string
+                    secretNames:
+                      items:
+                        type: string
+                      type: array
                     status:
                       type: string
                   required:

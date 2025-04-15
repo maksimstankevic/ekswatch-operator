@@ -30,6 +30,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/sts"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -69,6 +70,12 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// Fetch the Ekswatch instance
 	var ekswatch ekstoolsv1alpha1.Ekswatch
 	if err := r.Get(ctx, req.NamespacedName, &ekswatch); err != nil {
+		if apierrors.IsNotFound(err) {
+			// If the custom resource is not found then it usually means that it was deleted or not created
+			// In this way, we will stop the reconciliation
+			logging.Info("ekswatch resource not found. Ignoring since object might have beed deleted")
+			return ctrl.Result{}, nil
+		}
 		logging.Error(err, "unable to fetch Ekswatch")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -145,6 +152,16 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	ekswatch.Status.Clusters = make([]ekstoolsv1alpha1.Cluster, 0)
 	for i, account := range ekswatch.Spec.AccountsToWatch {
 		for _, cluster := range allClusters[i] {
+			// Check if the cluster has a secret
+			hasSecret := false
+			var secrets []string
+			secrets = append(secrets, "NoSecretsFound")
+			for _, secret := range k8sSecrets {
+				if secret == cluster || secret == "k8s-"+cluster {
+					secrets = appendSecret(secret, secrets)
+					hasSecret = true
+				}
+			}
 			ekswatch.Status.Clusters = append(ekswatch.Status.Clusters, ekstoolsv1alpha1.Cluster{
 				Name:   cluster,
 				Status: ekstoolsv1alpha1.ClusterStatusActive,
@@ -152,6 +169,8 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 					AccountID: account.AccountID,
 					RoleName:  account.RoleName,
 				},
+				HasSecrets:  hasSecret,
+				SecretNames: secrets,
 			})
 		}
 	}
@@ -264,4 +283,13 @@ func listSecrets(sess *session.Session, region string) ([]string, error) {
 
 	return secrets, nil
 
+}
+
+func appendSecret(secret string, secrets []string) []string {
+	if secrets[0] == "NoSecretsFound" {
+		secrets[0] = secret
+	} else {
+		secrets = append(secrets, secret)
+	}
+	return secrets
 }
