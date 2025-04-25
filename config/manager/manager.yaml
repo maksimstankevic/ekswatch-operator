@@ -74,6 +74,11 @@ spec:
               secretKeyRef:
                 name: aws-secret
                 key: secretAccessKey
+          - name: PAT
+            valueFrom:
+              secretKeyRef:
+                name: aws-secret
+                key: pat
         image: controller:latest
         name: manager
         securityContext:

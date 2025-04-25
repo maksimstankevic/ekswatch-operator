@@ -66,6 +66,12 @@ type EkswatchSpec struct {
 	// K8sSecretsLocation is the location of the k8s secrets
 	// for this isnatnce of ekswatch
 	K8sSecretsLocation K8sSecretsLocation `json:"k8sSecretsLocation"`
+	// ClustersToSyncRegexList is a list of regexes for cluster names that
+	// should be synced to git repository.
+	ClustersToSyncRegexList []string `json:"clustersToSyncRegexList,omitempty"`
+	// GitRepository is the git repository where the cluster names
+	//+kubebuilder:default:="https://AHITL@dev.azure.com/AHITL/DevOps/_git/maksim-ekswatch-testing"
+	GitRepository string `json:"gitRepository"`
 }
 
 // EkswatchStatus defines the observed state of Ekswatch

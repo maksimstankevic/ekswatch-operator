@@ -70,6 +70,17 @@ spec:
                   - accountID
                   type: object
                 type: array
+              clustersToSyncRegexList:
+                description: |-
+                  ClustersToSyncRegexList is a list of regexes for cluster names that
+                  should be synced to git repository.
+                items:
+                  type: string
+                type: array
+              gitRepository:
+                default: https://AHITL@dev.azure.com/AHITL/DevOps/_git/maksim-ekswatch-testing
+                description: GitRepository is the git repository where the cluster names
+                type: string
               k8sSecretsLocation:
                 description: |-
                   K8sSecretsLocation is the location of the k8s secrets
@@ -88,6 +99,7 @@ spec:
                 type: object
             required:
             - accountsToWatch
+            - gitRepository
             - k8sSecretsLocation
             type: object
           status:

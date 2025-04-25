@@ -30,6 +30,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -81,6 +85,55 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	logging.Info("Fetched Ekswatch", "accounts", ekswatch.Spec.AccountsToWatch)
+
+	repoDir := "/tmp/ekswatch_repo"
+
+	if len(ekswatch.Spec.ClustersToSyncRegexList) > 0 {
+		logging.Info("Clusters to sync regex list", "regexes", ekswatch.Spec.ClustersToSyncRegexList)
+
+		// Opens an already existing repository.
+		r, err := git.PlainOpen(repoDir)
+		if err != nil && err.Error() == "repository does not exist" {
+			logging.Info("No repo in place, cloning repository")
+
+			transport.UnsupportedCapabilities = []capability.Capability{
+				capability.ThinPack,
+			}
+
+			var err error
+
+			r, err = git.PlainClone(repoDir, false, &git.CloneOptions{
+				// The intended use of a GitHub personal access token is in replace of your password
+				// because access tokens can easily be revoked.
+				// https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
+				Auth: &http.BasicAuth{
+					Username: "dummy", // yes, this can be anything except an empty string
+					Password: os.Getenv("PAT"),
+				},
+				URL:   ekswatch.Spec.GitRepository,
+				Depth: 1,
+			})
+			if err != nil {
+				logging.Error(err, "Error cloning git repository")
+				return ctrl.Result{}, err
+			}
+			logging.Info("Cloned git repository", "repo", ekswatch.Spec.GitRepository)
+		}
+
+		ref, err := r.Head()
+		if err != nil {
+			logging.Error(err, "Error getting git head")
+			return ctrl.Result{}, err
+		}
+
+		commit, err := r.CommitObject(ref.Hash())
+		if err != nil {
+			logging.Error(err, "Error getting git commit object")
+			return ctrl.Result{}, err
+		}
+
+		logging.Info("Git commit", "commit", commit)
+	}
 
 	var allClusters = make([][]string, len(ekswatch.Spec.AccountsToWatch))
 	var allAuthErrors = make([]error, len(ekswatch.Spec.AccountsToWatch))
