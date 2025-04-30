@@ -155,7 +155,11 @@ spec:
                       required:
                       - accountID
                       type: object
-                    hasSecret:
+                    autoSyncEnabled:
+                      type: boolean
+                    hasSecrets:
+                      type: boolean
+                    lastAutoSyncSucceeded:
                       type: boolean
                     name:
                       type: string

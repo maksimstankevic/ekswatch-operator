@@ -34,6 +34,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -43,6 +44,16 @@ import (
 
 	ekstoolsv1alpha1 "github.com/maksimstankevic/ekswatch-operator/api/v1alpha1"
 )
+
+type Cluster struct {
+	Name         string            `yaml:"name"`
+	SecretPrefix string            `yaml:"secretPrefix,omitempty"`
+	Labels       map[string]string `yaml:"labels"`
+}
+
+type ClustersFile struct {
+	Clusters []Cluster `yaml:"clusters"`
+}
 
 // EkswatchReconciler reconciles a Ekswatch object
 type EkswatchReconciler struct {
@@ -345,4 +356,52 @@ func appendSecret(secret string, secrets []string) []string {
 		secrets = append(secrets, secret)
 	}
 	return secrets
+}
+
+// AddClusterIfNotExists checks if a cluster exists in the YAML file and adds it if not.
+func AddClusterIfNotExists(filePath string, clusterName string) error {
+	// Open the YAML file
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// Parse the YAML content
+	var clustersFile ClustersFile
+	err = yaml.Unmarshal(file, &clustersFile)
+	if err != nil {
+		return fmt.Errorf("failed to parse YAML: %w", err)
+	}
+
+	// Check if the cluster already exists
+	for _, cluster := range clustersFile.Clusters {
+		if cluster.Name == clusterName {
+			fmt.Println("Cluster already exists in the YAML file.")
+			return nil
+		}
+	}
+
+	// Add the new cluster
+	newCluster := Cluster{
+		Name: clusterName,
+		Labels: map[string]string{
+			"env": "dev", // Example label, modify as needed
+		},
+	}
+	clustersFile.Clusters = append(clustersFile.Clusters, newCluster)
+
+	// Marshal the updated content back to YAML
+	updatedYAML, err := yaml.Marshal(&clustersFile)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated YAML: %w", err)
+	}
+
+	// Write the updated YAML back to the file
+	err = os.WriteFile(filePath, updatedYAML, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write updated YAML to file: %w", err)
+	}
+
+	fmt.Println("Cluster added successfully.")
+	return nil
 }
