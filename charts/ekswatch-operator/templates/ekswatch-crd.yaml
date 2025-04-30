@@ -160,7 +160,7 @@ spec:
                     hasSecrets:
                       type: boolean
                     lastAutoSyncSucceeded:
-                      type: boolean
+                      type: string
                     name:
                       type: string
                     secretNames:

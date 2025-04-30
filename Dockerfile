@@ -25,9 +25,29 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+#FROM gcr.io/distroless/static:nonroot
+
+###
+FROM alpine:latest
+ARG USER=65532
+ENV HOME /home/$USER
+
+# install sudo as root
+RUN apk add --update sudo
+
+# add new user
+RUN adduser -D $USER \
+        && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
+        && chmod 0440 /etc/sudoers.d/$USER
+
+USER $USER
+
+###
+
+
 WORKDIR /
 COPY --from=builder /workspace/manager .
-USER 65532:65532
+#Enable below together with distroless image
+#USER 65532:65532
 
 ENTRYPOINT ["/manager"]

@@ -45,7 +45,7 @@ type Cluster struct {
 	HasSecrets            bool          `json:"hasSecrets,omitempty"`
 	SecretNames           []string      `json:"secretNames,omitempty"`
 	AutoSyncEnabled       bool          `json:"autoSyncEnabled,omitempty"`
-	LastAutoSyncSucceeded bool          `json:"lastAutoSyncSucceeded,omitempty"`
+	LastAutoSyncSucceeded string        `json:"lastAutoSyncSucceeded,omitempty"`
 }
 
 // k8s secrets location for ekswatch carries AWS Account ID and region

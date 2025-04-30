@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 
@@ -226,6 +227,31 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 					hasSecret = true
 				}
 			}
+
+			var autoSynced bool = false
+			var lastAutoSyncSucceeded string = "n/a"
+
+			// Check if the cluster matches any of the regexes
+			matches, err := MatchesAnyRegex(ekswatch.Spec.ClustersToSyncRegexList, cluster)
+			if err != nil {
+				logging.Error(err, "Error matching regex for cluster: "+cluster)
+				return ctrl.Result{}, err
+			}
+			if !matches {
+				logging.Info("Cluster does not match any regex, not autosyncing", "cluster", cluster)
+			} else {
+				logging.Info("Cluster matches regex, autosyncing", "cluster", cluster)
+				autoSynced = true
+				// Add the cluster to the YAML file
+				err := AddClusterIfNotExists(repoDir+"/values/clusters.yaml", cluster)
+				if err != nil {
+					logging.Error(err, "Error adding cluster to YAML file")
+					lastAutoSyncSucceeded = "no"
+					return ctrl.Result{}, err
+				}
+				lastAutoSyncSucceeded = "yes"
+			}
+
 			ekswatch.Status.Clusters = append(ekswatch.Status.Clusters, ekstoolsv1alpha1.Cluster{
 				Name:   cluster,
 				Status: ekstoolsv1alpha1.ClusterStatusActive,
@@ -233,8 +259,10 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 					AccountID: account.AccountID,
 					RoleName:  account.RoleName,
 				},
-				HasSecrets:  hasSecret,
-				SecretNames: secrets,
+				HasSecrets:            hasSecret,
+				SecretNames:           secrets,
+				AutoSyncEnabled:       autoSynced,
+				LastAutoSyncSucceeded: lastAutoSyncSucceeded,
 			})
 		}
 	}
@@ -404,4 +432,21 @@ func AddClusterIfNotExists(filePath string, clusterName string) error {
 
 	fmt.Println("Cluster added successfully.")
 	return nil
+}
+
+// MatchesAnyRegex checks if the clusterName matches any of the provided regex patterns.
+func MatchesAnyRegex(regexList []string, clusterName string) (bool, error) {
+	for _, pattern := range regexList {
+		// Compile the regex pattern
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return false, fmt.Errorf("invalid regex pattern: %s, error: %w", pattern, err)
+		}
+
+		// Check if the clusterName matches the regex
+		if re.MatchString(clusterName) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
