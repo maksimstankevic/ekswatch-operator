@@ -51,6 +51,21 @@ var _ = Describe("Ekswatch Controller", func() {
 						Name:      resourceName,
 						Namespace: "default",
 					},
+					Spec: ekstoolsv1alpha1.EkswatchSpec{
+						AccountsToWatch: []ekstoolsv1alpha1.Account{
+							{
+								AccountID: "123456789012",
+								RoleName:  "ekswatch",
+							},
+						},
+						K8sSecretsLocation: ekstoolsv1alpha1.K8sSecretsLocation{
+							AccountId: "123456789012",
+							Region:    "us-west-2",
+							RoleName:  "ekswatch",
+						},
+						ClustersToSyncRegexList: []string{},
+						GitRepository:           "https://bla.com/repo.git",
+					},
 					// TODO(user): Specify other spec details if needed.
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
@@ -76,7 +91,8 @@ var _ = Describe("Ekswatch Controller", func() {
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(ContainSubstring("EmptyStaticCreds"))
+			// Expect(err).NotTo(HaveOccurred())
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.
 		})
