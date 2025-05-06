@@ -14,7 +14,7 @@ jobs:
     #     uses: helm/kind-action@v1
       - name: Run e2e tests
         run: |
-          kind create cluster --name ekswatch-operator
+          kind create cluster
           kind get clusters
           kind get nodes
           make test-e2e
