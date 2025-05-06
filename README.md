@@ -1,4 +1,4 @@
-# ekswatch-operator
+## ekswatch-operator
 // TODO(user): Add simple overview of use/purpose
 
 ## Description
