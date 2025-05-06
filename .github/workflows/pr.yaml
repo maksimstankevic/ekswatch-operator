@@ -13,4 +13,7 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
       - name: Run e2e tests
-        run: make test-e2e
+        run: |
+          kind get clusters
+          kind get nodes
+          make test-e2e
