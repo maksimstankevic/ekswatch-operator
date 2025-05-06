@@ -1,7 +1,7 @@
 name: PR Workflow
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -10,3 +10,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run tests
         run: make test
+    #   - name: Create k8s Kind Cluster
+    #     uses: helm/kind-action@v1
+      - name: Run e2e tests
+        run: |
+          kind create cluster
+          kind get clusters
+          kind get nodes
+          make test-e2e
