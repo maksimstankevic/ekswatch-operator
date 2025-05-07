@@ -1,0 +1,15 @@
+name: PR Workflow
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Login to ghcr
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          make IMAGE_TAG_BASE=ghcr.io/${{ github.repository_owner }}/ekswatch-operator docker-buildx 
