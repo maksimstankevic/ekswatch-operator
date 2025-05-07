@@ -28,17 +28,17 @@ spec:
           valueFrom:
             secretKeyRef:
               key: accessKeyId
-              name: aws-secret
+              name: {{ include "ekswatch-operator.fullname" . }}-aws-secret
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               key: secretAccessKey
-              name: aws-secret
+              name: {{ include "ekswatch-operator.fullname" . }}-aws-secret
         - name: PAT
           valueFrom:
             secretKeyRef:
               key: pat
-              name: aws-secret
+              name: {{ include "ekswatch-operator.fullname" . }}-aws-secret
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag

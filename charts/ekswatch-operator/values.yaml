@@ -1,3 +1,7 @@
+awsSecret:
+  accessKeyId: ""
+  pat: ""
+  secretAccessKey: ""
 controllerManager:
   manager:
     args:
@@ -11,7 +15,7 @@ controllerManager:
         - ALL
     image:
       repository: localhost:5001/ekswatch-operator
-      tag: 0.0.2
+      tag: v0.0.1
     resources:
       limits:
         cpu: 500m
