@@ -1,0 +1,4 @@
+awsSecret:
+  accessKeyId: "blah"
+  pat: "blah"
+  secretAccessKey: "blah"
