@@ -50,4 +50,4 @@ jobs:
           echo "Pushed new version: $new_version"
 
       - name : Trigger helm release workflow
-        uses: .github/workflows/helm_release.yaml@master
+        uses: ./.github/workflows/helm_release.yaml
