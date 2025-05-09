@@ -11,6 +11,7 @@ on:
   workflow_call:
     inputs:
       version:
+        type: string
         description: 'Version of docker image to use'
         required: true
 
