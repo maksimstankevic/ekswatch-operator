@@ -37,11 +37,8 @@ jobs:
           git commit -m "Produced and pushed new image: $new_version"
           git push origin HEAD:master
 
+          echo "VERSION=$new_version" >> $GITHUB_OUTPUT
 
-      - name: Set output
-        id: version_setter
-        run: echo "VERSION=${{ steps.docker_image.outputs.new_version }}" >> $GITHUB_OUTPUT
-          
   trigger_build_helm_chart:
     uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
     with:
