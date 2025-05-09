@@ -39,6 +39,8 @@ jobs:
 
           echo "VERSION=$new_version" >> $GITHUB_OUTPUT
 
+          #comment
+
   trigger_build_helm_chart:
     uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
     with:
