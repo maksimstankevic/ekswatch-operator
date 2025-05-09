@@ -3,6 +3,16 @@ entries:
   ekswatch-operator:
   - apiVersion: v2
     appVersion: 0.1.0
+    created: "2025-05-09T10:44:48.110145121Z"
+    description: A Helm chart for Kubernetes
+    digest: c2571f4b885f16f89a1b78652a9e9099c93e9fef9c55904116ec8925c1a7b079
+    name: ekswatch-operator
+    type: application
+    urls:
+    - ekswatch-operator-0.1.10.tgz
+    version: 0.1.10
+  - apiVersion: v2
+    appVersion: 0.1.0
     created: "2025-05-09T10:25:33.402768222Z"
     description: A Helm chart for Kubernetes
     digest: 7f10b3e5eec0443feb2ae946133a8a93af0a7b7963f924fd2c2c72d758dfbe1b
@@ -81,4 +91,4 @@ entries:
     urls:
     - ekswatch-operator-0.1.0.tgz
     version: 0.1.0
-generated: "2025-05-09T10:25:33.402807136Z"
+generated: "2025-05-09T10:44:48.110179865Z"
