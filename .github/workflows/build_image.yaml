@@ -43,8 +43,8 @@ jobs:
         id: version_setter
         run: echo "VERSION=${{ steps.build_image.outputs.new_version }}" >> $GITHUB_OUTPUT
           
-    trigger_build_helm_chart:
-      uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
-      with:
-        version: ${{ needs.build_image.outputs.VERSION }}
-      needs: build_image
+  trigger_build_helm_chart:
+    uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
+    with:
+      version: ${{ needs.build_image.outputs.VERSION }}
+    needs: build_image
