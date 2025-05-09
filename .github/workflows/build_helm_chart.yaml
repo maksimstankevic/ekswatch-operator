@@ -50,6 +50,4 @@ jobs:
           echo "Pushed new version: $new_version"
 
   trigger_helm_releaase:
-    needs: build_helm_chart
-    runs-on: ubuntu-latest
     uses: ./.github/workflows/helm_release.yaml
