@@ -45,4 +45,5 @@ jobs:
     uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
     with:
       version: ${{ needs.build_image.outputs.VERSION }}
+      event: workflow_call
     needs: build_image
