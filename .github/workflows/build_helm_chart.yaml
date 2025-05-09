@@ -53,8 +53,5 @@ jobs:
 
 
   trigger_helm_release:
-    uses: actions/checkout@v3
-    with:
-      fetch-depth: 0
     uses: maksimstankevic/ekswatch-operator/.github/workflows/helm_release.yaml@master
     needs: build_helm_chart
