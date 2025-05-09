@@ -49,5 +49,7 @@ jobs:
           git push origin HEAD:master
           echo "Pushed new version: $new_version"
 
-      - name : Trigger helm release workflow
-        uses: ./.github/workflows/helm_release.yaml
+  trigger_helm_releaase:
+    runs-on: ubuntu-latest
+    name : Trigger helm release workflow
+    uses: ./.github/workflows/helm_release.yaml
