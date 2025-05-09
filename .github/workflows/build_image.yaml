@@ -26,13 +26,9 @@ jobs:
 
           echo "New version: $new_version"
           
-          
+          sed -i "s/VERSION ?= .*/VERSION ?= $new_version/" Makefile
 
           make IMAGE_TAG_BASE=ghcr.io/${{ github.repository_owner }}/ekswatch-operator docker-buildx
-
-          #VERSION=$new_version
-
-          sed -i "s/VERSION ?= .*/VERSION ?= $new_version/" Makefile
 
           git config --global user.name "build-image-bot"
           git config --global user.email "a@b.c"
