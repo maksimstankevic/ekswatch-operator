@@ -11,6 +11,10 @@ on:
       - cmd/**
       - internal/**
 
+env:
+  ACTIONS_STEP_DEBUG: true
+  ACTIONS_RUNNER_DEBUG: true
+
 
 jobs:
   build_image:
@@ -26,7 +30,7 @@ jobs:
 
           echo "New version: $new_version"
           
-          sed -i 's/^VERSION ?= .*/VERSION ?= $new_version/' Makefile
+          sed -i 's/^VERSION ?= .*/VERSION ?= '"$new_version"'/' Makefile
 
           make IMAGE_TAG_BASE=ghcr.io/${{ github.repository_owner }}/ekswatch-operator docker-buildx
 
