@@ -1,0 +1,46 @@
+name: Build Image Workflow
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - Dockerfile
+      - Makefile
+      - .github/workflows/build_image.yaml
+      - api/**
+      - cmd/**
+      - internal/**
+
+
+jobs:
+  build_image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Produce and push docker image
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          new_version=$(cat Makefile | grep "VERSION ?= " | cut -d'=' -f2 | tr -d ' ' | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+
+          echo "New version: $new_version"
+          
+          
+
+          make IMAGE_TAG_BASE=ghcr.io/${{ github.repository_owner }}/ekswatch-operator VERSION=$new_version docker-buildx
+
+          sed -i "s/VERSION ?= .*/VERSION ?= $new_version/" Makefile
+
+          git config --global user.name "build-image-bot"
+          git config --global user.email "a@b.c"
+          git add .
+          git commit -m "Produced and pushed new image: $new_version"
+          git push origin HEAD:master
+          
+      - name : Trigger build_helm_chart workflow
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          workflow: Build Helm Chart Workflow
+          ref: master
+          inputs:
+            version: ${{ steps.build_image.outputs.new_version }}

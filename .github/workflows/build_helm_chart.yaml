@@ -1,0 +1,49 @@
+name: Build Helm Chart Workflow
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - Makefile
+      - .github/workflows/build_helm_chart.yaml
+      - .github/workflows/helm_release.yaml
+      - config/**
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version of docker image to use'
+        required: true
+
+
+jobs:
+  build_helm_chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: update image version if called from build_image.yaml
+        if: ${{ github.event_name == 'workflow_call' }}
+        run: |
+          echo "Updating image version to ${{ inputs.version }}"
+          sed -i "s/newTag:.*/newTag: ${{ inputs.version }}/" config/manager/kustomization.yaml
+          
+
+      - name: generate helm chart
+        run: |
+
+          new_version=$(cat charts/ekswatch-operator/Chart.yaml | grep "^version: " | cut -d' ' -f2 | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+
+          sed -i "s/version: .*/version: $new_version/" charts/ekswatch-operator/Chart.yaml
+
+          echo "New version: $new_version"
+          
+
+          make helm
+
+
+          git config --global user.name "build-helm-chart-bot"
+          git config --global user.email "a@b.c"
+          git add .
+          git commit -m "Update helm chart version to $new_version"
+          git push origin HEAD:master
+          echo "Pushed new version: $new_version"
