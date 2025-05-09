@@ -51,5 +51,4 @@ jobs:
 
   trigger_helm_releaase:
     runs-on: ubuntu-latest
-    name : Trigger helm release workflow
     uses: ./.github/workflows/helm_release.yaml
