@@ -37,10 +37,10 @@ jobs:
           git commit -m "Produced and pushed new image: $new_version"
           git push origin HEAD:master
           
-        - name : Trigger build_helm_chart workflow
-          uses: peter-evans/workflow-dispatch@v1
-          with:
-            workflow: Build Helm Chart Workflow
-            ref: master
-            inputs:
-              version: ${{ steps.build_image.outputs.new_version }}
+      - name : Trigger build_helm_chart workflow
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          workflow: Build Helm Chart Workflow
+          ref: master
+          inputs:
+            version: ${{ steps.build_image.outputs.new_version }}
