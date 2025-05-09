@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: localhost:5001/ekswatch-operator
-  newTag: 
+  newTag: 0.0.8
