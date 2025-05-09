@@ -1,12 +1,12 @@
 name: Release Charts
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - charts/**
   workflow_call:
+    inputs:
+      helm_version:
+        type: string
+        description: 'HELM version'
+        required: true
 
 jobs:
   release:
@@ -30,6 +30,7 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
+          version: ${{ inputs.helm_version }}
           charts_dir: charts
           skip_existing: true
           packages_with_index: true
