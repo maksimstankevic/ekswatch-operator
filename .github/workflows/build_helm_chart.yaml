@@ -24,9 +24,9 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-          
+
       - name: update image version if called from build_image.yaml
-        if: ${{ github.event_name == 'workflow_call' }}
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Updating image version to ${{ inputs.version }}"
           sed -i "s/newTag:.*/newTag: ${{ inputs.version }}/" config/manager/kustomization.yaml
