@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Produce and push docker image
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -36,11 +37,14 @@ jobs:
           git add .
           git commit -m "Produced and pushed new image: $new_version"
           git push origin HEAD:master
+
+
+      - name: Set output
+        id: version_setter
+        run: echo "VERSION=${{ steps.build_image.outputs.new_version }}" >> $GITHUB_OUTPUT
           
-      - name : Trigger build_helm_chart workflow
-        uses: peter-evans/workflow-dispatch@v3
-        with:
-          workflow: Build Helm Chart Workflow
-          ref: master
-          inputs:
-            version: ${{ steps.build_image.outputs.new_version }}
+    trigger_build_helm_chart:
+      uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
+      with:
+        version: ${{ needs.build_image.outputs.VERSION }}
+      needs: build_image

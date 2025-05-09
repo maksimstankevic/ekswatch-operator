@@ -8,7 +8,6 @@ on:
       - .github/workflows/build_helm_chart.yaml
       - .github/workflows/helm_release.yaml
       - config/**
-      - charts/**
   workflow_call:
     inputs:
       version:
@@ -22,7 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+        with:
+          fetch-depth: 0
+          ref: master
+          
       - name: update image version if called from build_image.yaml
         if: ${{ github.event_name == 'workflow_call' }}
         run: |
