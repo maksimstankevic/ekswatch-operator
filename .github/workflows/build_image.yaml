@@ -11,10 +11,6 @@ on:
       - cmd/**
       - internal/**
 
-env:
-  ACTIONS_STEP_DEBUG: true
-  ACTIONS_RUNNER_DEBUG: true
-
 
 jobs:
   build_image:
@@ -26,11 +22,11 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          new_version=$(cat Makefile | grep "VERSION ?= " | cut -d'=' -f2 | tr -d ' ' | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+          new_version=$(cat Makefile | grep "^VERSION ?= " | cut -d'=' -f2 | tr -d ' ' | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
 
           echo "New version: $new_version"
           
-          sed -i 's/^VERSION ?= .*/VERSION ?= '"$new_version"'/' Makefile
+          sed -i "s/^VERSION ?= .*/VERSION ?= $new_version/" Makefile
 
           make IMAGE_TAG_BASE=ghcr.io/${{ github.repository_owner }}/ekswatch-operator docker-buildx
 
