@@ -48,3 +48,11 @@ jobs:
           git commit -m "Update helm chart version to $new_version"
           git push origin HEAD:master
           echo "Pushed new version: $new_version"
+
+      - name : Trigger helm release workflow
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          workflow: Release Charts
+          ref: master
+          inputs:
+            version: ${{ steps.build_image.outputs.new_version }}
