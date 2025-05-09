@@ -14,6 +14,10 @@ on:
         type: string
         description: 'Version of docker image to use'
         required: true
+      event:
+        type: string
+        description: 'Trigger event type'
+        default: 'none'
 
 
 jobs:
@@ -26,7 +30,7 @@ jobs:
           ref: master
 
       - name: update image version if called from build_image.yaml
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ inputs.event == 'workflow_call' }}
         run: |
           echo "Updating image version to ${{ inputs.version }}"
           sed -i "s/newTag:.*/newTag: ${{ inputs.version }}/" config/manager/kustomization.yaml
