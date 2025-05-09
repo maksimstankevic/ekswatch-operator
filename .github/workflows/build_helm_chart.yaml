@@ -31,6 +31,7 @@ jobs:
           
 
       - name: generate helm chart
+        id: generate_helm_chart
         run: |
 
           new_version=$(cat charts/ekswatch-operator/Chart.yaml | grep "^version: " | cut -d' ' -f2 | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
@@ -50,9 +51,14 @@ jobs:
           git push origin HEAD:master
           echo "Pushed new version: $new_version"
 
+
+      - name: Set output
+        id: helm_version_setter
+        run: echo "HELM_VERSION=${{ steps.generate_helm_chart.outputs.new_version }}" >> $GITHUB_OUTPUT
+
   trigger_helm_release:
     uses: ./.github/workflows/helm_release.yaml
     with:
-      helm_version: ${{ steps.build_helm_chart.outputs.new_version }}
+      helm_version: ${{ needs.build_helm_chart.outputs.HELM_VERSION }}
     needs: build_helm_chart
     #test
