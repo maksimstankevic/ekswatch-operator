@@ -38,7 +38,7 @@ jobs:
           git push origin HEAD:master
           
       - name : Trigger build_helm_chart workflow
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v3
         with:
           workflow: Build Helm Chart Workflow
           ref: master
