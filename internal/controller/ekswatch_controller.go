@@ -558,7 +558,7 @@ func CommitAndPushChanges(repoPath, commitMessage, username, token string, ctx c
 		return err
 	}
 
-	logging.Info("Changes pushed to origin successfully.")
+	logging.Info("Changes pushed to repo successfully.")
 	return nil
 }
 
