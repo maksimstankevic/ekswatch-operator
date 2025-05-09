@@ -57,8 +57,5 @@ jobs:
         run: echo "HELM_VERSION=${{ steps.generate_helm_chart.outputs.new_version }}" >> $GITHUB_OUTPUT
 
   trigger_helm_release:
-    uses: ./.github/workflows/helm_release.yaml
-    with:
-      helm_version: ${{ needs.build_helm_chart.outputs.HELM_VERSION }}
+    uses: maksimstankevic/ekswatch-operator/.github/workflows/helm_release.yaml@master
     needs: build_helm_chart
-    #test
