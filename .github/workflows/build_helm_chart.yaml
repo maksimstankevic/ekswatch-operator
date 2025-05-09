@@ -52,10 +52,9 @@ jobs:
           echo "Pushed new version: $new_version"
 
 
-      - name: Set output
-        id: helm_version_setter
-        run: echo "HELM_VERSION=${{ steps.generate_helm_chart.outputs.new_version }}" >> $GITHUB_OUTPUT
-
   trigger_helm_release:
+    uses: actions/checkout@v3
+    with:
+      fetch-depth: 0
     uses: maksimstankevic/ekswatch-operator/.github/workflows/helm_release.yaml@master
     needs: build_helm_chart
