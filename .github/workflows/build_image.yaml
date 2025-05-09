@@ -15,6 +15,8 @@ on:
 jobs:
   build_image:
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.docker_image.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v3
 
@@ -39,11 +41,9 @@ jobs:
 
           echo "VERSION=$new_version" >> $GITHUB_OUTPUT
 
-          #comment
-
   trigger_build_helm_chart:
     uses: maksimstankevic/ekswatch-operator/.github/workflows/build_helm_chart.yaml@master
     with:
-      version: ${{ needs.build_image.outputs.VERSION }}
+      version: ${{ needs.build_image.outputs.new_version }}
       event: workflow_call
     needs: build_image
