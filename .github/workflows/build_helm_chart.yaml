@@ -50,7 +50,4 @@ jobs:
           echo "Pushed new version: $new_version"
 
       - name : Trigger helm release workflow
-        uses: peter-evans/workflow-dispatch@v3
-        with:
-          workflow: Release Charts
-          ref: master
+        uses: .github/workflows/helm_release.yaml@main
