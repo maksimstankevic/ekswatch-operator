@@ -51,3 +51,4 @@ jobs:
 
   trigger_helm_releaase:
     uses: ./.github/workflows/helm_release.yaml
+    needs: build_helm_chart
