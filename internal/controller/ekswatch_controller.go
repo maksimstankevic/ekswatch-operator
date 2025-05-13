@@ -217,8 +217,8 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// List all clusters in all accounts
 	logging.Info("All clusters", "clusters", allClusters)
 
-	// List k8s secrets
-	logging.Info("K8s secrets", "secrets", k8sSecrets)
+	// List k8s secrets DEBUG ONLY
+	// logging.Info("K8s secrets", "secrets", k8sSecrets)
 
 	// Update the status of the Ekswatch instance
 	ekswatch.Status.Clusters = make([]ekstoolsv1alpha1.Cluster, 0)
@@ -572,6 +572,6 @@ func DeleteFolder(folderPath string, ctx context.Context) error {
 		logging.Error(err, "failed to delete folder")
 		return err
 	}
-	logging.Info("Folder %s deleted successfully.\n", folderPath)
+	logging.Info("Successfully deleted existing repo folder", "folder", folderPath)
 	return nil
 }
