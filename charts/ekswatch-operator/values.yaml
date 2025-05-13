@@ -15,7 +15,7 @@ controllerManager:
         - ALL
     image:
       repository: localhost:5001/ekswatch-operator
-      tag: 0.0.8
+      tag: 0.0.9
     resources:
       limits:
         cpu: 500m
