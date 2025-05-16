@@ -1,8 +1,18 @@
 ## ekswatch-operator
-// TODO(user): Add simple overview of use/purpose
+The ekswatch-operator is a Kubernetes operator designed to monitor Amazon EKS (Elastic Kubernetes Service) clusters across multiple AWS accounts, locate special AWS secrets that carry DEVOPS information about EKS clusters and, optionally, sync some of above data to DEVOPS GitOPS repository.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+### Key Features
+
+#### EKS Cluster and Secret Discovery:
+- Fetches EKS clusters from all regions of the monitored accounts.
+- Looks for AWS secrets that are names as discovered clusters (or with a prefix k8s-) and logs secret availability in the ekswatch status.
+
+#### Git Repository Sync:
+- Optionally Syncs the discovered cluster names to a YAML file in specified GitOPS repository. To decide which clusters need autosync uses (`clustersToSyncRegexList`). Logs last autosync success in the ekswatch status.
+
+
+![screenshot](ekswatchP.png)
 
 ## Getting Started
 
