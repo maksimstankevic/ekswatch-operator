@@ -38,8 +38,12 @@ var _ = Describe("controller", Ordered, func() {
 		Expect(utils.InstallCertManager()).To(Succeed())
 
 		By("creating manager namespace")
-		cmd := exec.Command("kubectl", "create", "ns", namespace)
-		_, _ = utils.Run(cmd)
+		cmd1 := exec.Command("kubectl", "create", "ns", namespace)
+		_, _ = utils.Run(cmd1)
+
+		By("creating empty secret")
+		cmd2 := exec.Command("kubectl", "apply", "-f", "test/e2e/emptySecret.yaml", "-n", namespace)
+		_, _ = utils.Run(cmd2)
 	})
 
 	AfterAll(func() {
@@ -49,9 +53,13 @@ var _ = Describe("controller", Ordered, func() {
 		By("uninstalling the cert-manager bundle")
 		utils.UninstallCertManager()
 
+		By("removing empty secret")
+		cmd1 := exec.Command("kubectl", "delete", "-f", "test/e2e/emptySecret.yaml", "-n", namespace)
+		_, _ = utils.Run(cmd1)
+
 		By("removing manager namespace")
-		cmd := exec.Command("kubectl", "delete", "ns", namespace)
-		_, _ = utils.Run(cmd)
+		cmd2 := exec.Command("kubectl", "delete", "ns", namespace)
+		_, _ = utils.Run(cmd2)
 	})
 
 	Context("Operator", func() {
