@@ -151,7 +151,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 
-		logging.Info("Last commit", "commit", commit)
+		logging.Info("Last git commit", "commit", commit)
 	}
 
 	var allClusters = make([][]string, len(ekswatch.Spec.AccountsToWatch))
