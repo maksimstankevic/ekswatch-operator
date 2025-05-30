@@ -8,7 +8,6 @@ on:
       - .github/workflows/build_helm_chart.yaml
       - .github/workflows/helm_release.yaml
       - config/**
-      - charts/ekswatch-operator/**
   workflow_call:
     inputs:
       version:

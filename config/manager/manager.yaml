@@ -7,17 +7,6 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: system
 ---
-apiVersion: v1
-data:
-  accessKeyId: QkxBSA==
-  pat: QkxBSA==
-  secretAccessKey: QkxBSA==
-kind: Secret
-metadata:
-  annotations:
-  name: aws-secret
-type: Opaque
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
