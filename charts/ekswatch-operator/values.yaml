@@ -1,7 +1,7 @@
 awsSecret:
-  accessKeyId: ""
-  pat: ""
-  secretAccessKey: ""
+  accessKeyId: "blah"
+  pat: "blah"
+  secretAccessKey: "blah"
 controllerManager:
   manager:
     args:
@@ -14,7 +14,8 @@ controllerManager:
         drop:
         - ALL
     image:
-      repository: localhost:5001/ekswatch-operator
+      # repository: localhost:5001/ekswatch-operator
+      repository: ghcr.io/maksimstankevic/ekswatch-operator
       tag: 0.0.9
     resources:
       limits:
