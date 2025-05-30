@@ -10,8 +10,8 @@ controllerManager:
         drop:
         - ALL
     image:
-      repository: localhost:5001/ekswatch-operator
-      tag: v0.0.1
+      repository: ghcr.io/maksimstankevic/ekswatch-operator
+      tag: v0.0.10
     resources:
       limits:
         cpu: 500m
