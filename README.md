@@ -1,4 +1,4 @@
-## ekswatch-operator
+### ekswatch-operator
 The ekswatch-operator is a Kubernetes operator designed to monitor Amazon EKS (Elastic Kubernetes Service) clusters across multiple AWS accounts, locate special AWS secrets that carry DEVOPS information about EKS clusters and, optionally, sync some of above data to DEVOPS GitOPS repository.
 
 
