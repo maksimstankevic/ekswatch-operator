@@ -4,6 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: ghcr.io/maksimstankevic/ekswatch-operator
-  newTag: 0.0.9
-
+  newName: localhost:5001/ekswatch-operator
+  newTag: v0.0.1
