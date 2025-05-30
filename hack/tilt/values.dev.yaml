@@ -1,4 +1,4 @@
-awsSecret:
-  accessKeyId: "blah"
-  pat: "blah"
-  secretAccessKey: "blah"
+controllerManager:
+  manager:
+    image:
+      repository: localhost:5001/ekswatch-operator
