@@ -11,7 +11,7 @@ controllerManager:
         - ALL
     image:
       repository: ghcr.io/maksimstankevic/ekswatch-operator
-      tag: 0.0.10
+      tag: 0.0.11
     resources:
       limits:
         cpu: 500m
