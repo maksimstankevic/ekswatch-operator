@@ -24,13 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
@@ -45,6 +39,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	ekstoolsv1alpha1 "github.com/maksimstankevic/ekswatch-operator/api/v1alpha1"
+
+	"github.com/maksimstankevic/aws-go/asm"
+	mysts "github.com/maksimstankevic/aws-go/sts"
+
+	myeks "github.com/maksimstankevic/aws-go/eks"
 )
 
 type Cluster struct {
@@ -80,10 +79,6 @@ type EkswatchReconciler struct {
 func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logging := log.FromContext(ctx)
 
-	// TODO(user): your logic here
-
-	logging.Info("Reconciling Ekswatch")
-
 	// Fetch the Ekswatch instance
 	var ekswatch ekstoolsv1alpha1.Ekswatch
 	if err := r.Get(ctx, req.NamespacedName, &ekswatch); err != nil {
@@ -98,6 +93,8 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	logging.Info("Fetched Ekswatch", "accounts", ekswatch.Spec.AccountsToWatch)
+
+	logging.Info("Reconciling Ekswatch: " + ekswatch.Name)
 
 	repoDir := "/tmp/ekswatch_repo"
 
@@ -164,17 +161,17 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		go func(i int, account ekstoolsv1alpha1.Account) {
 			defer wg.Done()
 			var sess *session.Session
-			sess, allAuthErrors[i] = getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, ctx)
+			sess, allAuthErrors[i] = mysts.GetCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), account.AccountID, account.RoleName, ctx)
 			if sess == nil {
 				return
 			}
-			allListingErrors[i] = listEKSClusters(sess, &allClusters[i], ctx)
+			allListingErrors[i] = myeks.ListEKSClusters(sess, &allClusters[i], ctx)
 		}(i, account)
 	}
 
 	// Get creds for listing k8s secrets
 
-	sess, err := getCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ekswatch.Spec.K8sSecretsLocation.AccountId, ekswatch.Spec.K8sSecretsLocation.RoleName, ctx)
+	sess, err := mysts.GetCredsViaSts(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ekswatch.Spec.K8sSecretsLocation.AccountId, ekswatch.Spec.K8sSecretsLocation.RoleName, ctx)
 	if err != nil {
 		logging.Error(err, "Error getting STS creds for listing k8s secrets")
 		return ctrl.Result{}, err
@@ -187,7 +184,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		defer wg.Done()
 		// Get the list of k8s secrets
 		var err error
-		k8sSecrets, err = listSecrets(sess, ekswatch.Spec.K8sSecretsLocation.Region, ctx)
+		k8sSecrets, err = asm.ListSecrets(sess, ekswatch.Spec.K8sSecretsLocation.Region, ctx)
 		if err != nil {
 			logging.Error(err, "Error listing k8s secrets")
 			return err
@@ -300,112 +297,6 @@ func (r *EkswatchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ekstoolsv1alpha1.Ekswatch{}).
 		Complete(r)
-}
-
-func listEKSClusters(sess *session.Session, clusters *[]string, ctx context.Context) error {
-
-	logging := log.FromContext(ctx)
-
-	// Get all available regions
-	ec2Svc := ec2.New(sess)
-	regionsOutput, err := ec2Svc.DescribeRegions(&ec2.DescribeRegionsInput{})
-	if err != nil {
-		logging.Error(err, "failed to describe regions")
-		return err
-	}
-
-	// Iterate over all regions and list EKS clusters
-	for _, region := range regionsOutput.Regions {
-		regionName := aws.StringValue(region.RegionName)
-		eksSvc := eks.New(sess, &aws.Config{Region: aws.String(regionName)})
-
-		listClustersInput := &eks.ListClustersInput{}
-		for {
-			listClustersOutput, err := eksSvc.ListClusters(listClustersInput)
-			if err != nil {
-				logging.Error(err, "failed to list clusters in region %s", regionName)
-				return err
-			}
-
-			*clusters = append(*clusters, aws.StringValueSlice(listClustersOutput.Clusters)...)
-
-			if listClustersOutput.NextToken == nil {
-				break
-			}
-			listClustersInput.NextToken = listClustersOutput.NextToken
-		}
-	}
-
-	return nil
-}
-
-func getCredsViaSts(accessKeyID string, secretAccessKey string, accountId string, roleToAssume string, ctx context.Context) (*session.Session, error) {
-
-	logging := log.FromContext(ctx)
-
-	// build complete role ARN
-	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, roleToAssume)
-
-	// Create a new AWS session
-	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
-		Region:      aws.String("eu-west-1"),
-	})
-	if err != nil {
-		logging.Error(err, "failed to create AWS session")
-		return nil, err
-	}
-
-	// Assume the specified role
-	stsSvc := sts.New(sess)
-	assumeRoleOutput, err := stsSvc.AssumeRole(&sts.AssumeRoleInput{
-		RoleArn:         aws.String(roleArn),
-		RoleSessionName: aws.String("ekswatch-session"),
-	})
-	if err != nil {
-		logging.Error(err, "failed to assume role")
-		return nil, err
-	}
-
-	// Create a new session with the assumed role credentials
-	sess, err = session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(
-			aws.StringValue(assumeRoleOutput.Credentials.AccessKeyId),
-			aws.StringValue(assumeRoleOutput.Credentials.SecretAccessKey),
-			aws.StringValue(assumeRoleOutput.Credentials.SessionToken),
-		),
-		Region: aws.String("eu-west-1"),
-	})
-	if err != nil {
-		logging.Error(err, "failed to create session with assumed role")
-		return nil, err
-	}
-	return sess, nil
-}
-
-func listSecrets(sess *session.Session, region string, ctx context.Context) ([]string, error) {
-
-	logging := log.FromContext(ctx)
-
-	// Create a new Secrets Manager client
-	svc := secretsmanager.New(sess, &aws.Config{Region: aws.String(region)})
-
-	// List all secrets
-	input := &secretsmanager.ListSecretsInput{}
-	var secrets []string
-	err := svc.ListSecretsPages(input, func(page *secretsmanager.ListSecretsOutput, lastPage bool) bool {
-		for _, secret := range page.SecretList {
-			secrets = append(secrets, aws.StringValue(secret.Name))
-		}
-		return !lastPage
-	})
-	if err != nil {
-		logging.Error(err, "failed to list secrets")
-		return nil, err
-	}
-
-	return secrets, nil
-
 }
 
 func appendSecret(secret string, secrets []string) []string {
