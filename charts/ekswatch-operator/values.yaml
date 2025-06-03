@@ -52,3 +52,10 @@ ui:
       requests:
         cpu: 10m
         memory: 64Mi
+uiService:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  type: ClusterIP
