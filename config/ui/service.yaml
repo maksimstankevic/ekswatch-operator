@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: ui
+    app.kubernetes.io/name: ekswatch-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: ui-service
+  namespace: system
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    control-plane: ui
+  type: ClusterIP    
+
+

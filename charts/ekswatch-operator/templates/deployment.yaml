@@ -99,5 +99,5 @@ spec:
         securityContext: {{- toYaml .Values.ui.ui.containerSecurityContext | nindent 10
           }}
       securityContext: {{- toYaml .Values.ui.podSecurityContext | nindent 8 }}
-      serviceAccountName: ui
+      serviceAccountName: {{ include "ekswatch-operator.fullname" . }}-controller-manager
       terminationGracePeriodSeconds: 10
