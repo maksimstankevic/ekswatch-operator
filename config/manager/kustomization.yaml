@@ -1,8 +1,12 @@
 resources:
 - manager.yaml
+- ui.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
+  newName: ghcr.io/maksimstankevic/ekswatch-operator
+  newTag: 0.0.11
+- name: ui
   newName: ghcr.io/maksimstankevic/ekswatch-operator
   newTag: 0.0.11
