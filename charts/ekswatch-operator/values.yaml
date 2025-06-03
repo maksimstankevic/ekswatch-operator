@@ -32,3 +32,28 @@ metricsService:
     protocol: TCP
     targetPort: 8443
   type: ClusterIP
+ui:
+  replicas: 1
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  podSecurityContext:
+    runAsNonRoot: true
+  serviceAccount:
+    annotations: {}
+  service:
+    ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+    type: ClusterIP
