@@ -34,6 +34,7 @@ jobs:
         run: |
           echo "Updating image version to ${{ inputs.version }}"
           sed -i "s/newTag:.*/newTag: ${{ inputs.version }}/" config/manager/kustomization.yaml
+          sed -i "s/newTag:.*/newTag: ${{ inputs.version }}/" config/ui/kustomization.yaml
           
 
       - name: generate helm chart
