@@ -23,6 +23,29 @@ COPY internal/controller/ internal/controller/
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
 
+
+#############################################################################################################
+# Build ui image
+FROM golang:1.24 AS builder_ui
+ARG TARGETOS
+ARG TARGETARCH
+
+WORKDIR /ui
+# Copy the Go Modules manifests
+COPY ui/go.mod go.mod
+COPY ui/go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
+# Copy the go source
+COPY ui/cmd/app/main.go cmd/app/main.go
+COPY ui/http http
+COPY ui/html html
+
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ui cmd/app/main.go
+#############################################################################################################
+
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 #FROM gcr.io/distroless/static:nonroot
@@ -47,7 +70,8 @@ USER $USER
 
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY --from=builder_ui /ui/ui .
 #Enable below together with distroless image
 #USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+CMD ["/manager"]

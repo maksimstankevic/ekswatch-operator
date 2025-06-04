@@ -2,3 +2,7 @@ controllerManager:
   manager:
     image:
       repository: localhost:5001/ekswatch-operator
+ui:
+  ui:
+    image:
+      repository: localhost:5001/ekswatch-operator

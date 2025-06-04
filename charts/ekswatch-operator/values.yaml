@@ -32,3 +32,30 @@ metricsService:
     protocol: TCP
     targetPort: 8443
   type: ClusterIP
+ui:
+  podSecurityContext:
+    runAsNonRoot: true
+  replicas: 1
+  ui:
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    image:
+      repository: ghcr.io/maksimstankevic/ekswatch-operator
+      tag: 0.0.11
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+uiService:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  type: ClusterIP

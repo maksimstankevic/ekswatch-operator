@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ekswatch-operator.fullname" . }}-ui-service
+  labels:
+    control-plane: ui
+  {{- include "ekswatch-operator.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.uiService.type }}
+  selector:
+    control-plane: ui
+    {{- include "ekswatch-operator.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.uiService.ports | toYaml | nindent 2 }}

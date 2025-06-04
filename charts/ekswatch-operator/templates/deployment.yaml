@@ -64,3 +64,40 @@ spec:
         8 }}
       serviceAccountName: {{ include "ekswatch-operator.fullname" . }}-controller-manager
       terminationGracePeriodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ekswatch-operator.fullname" . }}-ui
+  labels:
+    control-plane: ui
+  {{- include "ekswatch-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.ui.replicas }}
+  selector:
+    matchLabels:
+      control-plane: ui
+    {{- include "ekswatch-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        control-plane: ui
+      {{- include "ekswatch-operator.selectorLabels" . | nindent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: ui
+    spec:
+      containers:
+      - command:
+        - /ui
+        env:
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.ui.ui.image.repository }}:{{ .Values.ui.ui.image.tag | default
+          .Chart.AppVersion }}
+        name: ui
+        resources: {{- toYaml .Values.ui.ui.resources | nindent 10 }}
+        securityContext: {{- toYaml .Values.ui.ui.containerSecurityContext | nindent 10
+          }}
+      securityContext: {{- toYaml .Values.ui.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "ekswatch-operator.fullname" . }}-controller-manager
+      terminationGracePeriodSeconds: 10
