@@ -5,6 +5,7 @@ go 1.24.1
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
+	github.com/stretchr/testify v1.10.0
 	k8s.io/apimachinery v0.33.0
 	k8s.io/client-go v0.33.0
 	sigs.k8s.io/controller-runtime v0.21.0
@@ -25,6 +26,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
