@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
 
 type TestCluster struct {
@@ -14,7 +15,7 @@ type TestCluster struct {
 }
 
 type TestClustersFile struct {
-	TestClusters []TestCluster `yaml:"TestClusters"`
+	TestClusters []TestCluster `yaml:"clusters"`
 }
 
 func TestAppendSecret(t *testing.T) {
@@ -46,39 +47,43 @@ func TestAppendSecret(t *testing.T) {
 	}
 }
 
-// func TestAddClusterIfNotExists(t *testing.T) {
-// 	tmpFile, err := os.CreateTemp("", "clusters-*.yaml")
-// 	assert.NoError(t, err)
-// 	defer os.Remove(tmpFile.Name())
+func TestAddClusterIfNotExists(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "clusters-*.yaml")
+	assert.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
 
-// 	clusters := TestClustersFile{
-// 		TestClusters: []TestCluster{
-// 			{Name: "existing-cluster", Labels: map[string]string{"env": "prod"}},
-// 		},
-// 	}
-// 	data, _ := yaml.Marshal(&clusters)
-// 	os.WriteFile(tmpFile.Name(), data, 0644)
+	clusters := TestClustersFile{
+		TestClusters: []TestCluster{
+			{Name: "existing-cluster", Labels: map[string]string{"env": "prod"}},
+		},
+	}
+	data, _ := yaml.Marshal(&clusters)
+	os.WriteFile(tmpFile.Name(), data, 0644)
+	assert.FileExists(t, tmpFile.Name())
+	content, err := os.ReadFile(tmpFile.Name())
+	assert.NoError(t, err)
+	assert.Contains(t, string(content), "existing-cluster")
 
-// 	ctx := context.TODO()
+	ctx := context.TODO()
 
-// 	// Test adding a new cluster
-// 	err = AddClusterIfNotExists(tmpFile.Name(), "new-cluster", ctx)
-// 	assert.NoError(t, err)
+	// Test adding a new cluster
+	err = AddClusterIfNotExists(tmpFile.Name(), "new-cluster", ctx)
+	assert.NoError(t, err)
 
-// 	// Check file contents
-// 	updated, _ := os.ReadFile(tmpFile.Name())
-// 	var updatedClusters TestClustersFile
-// 	yaml.Unmarshal(updated, &updatedClusters)
-// 	assert.Len(t, updatedClusters.TestClusters, 2)
-// 	assert.Equal(t, "new-cluster", updatedClusters.TestClusters[1].Name)
+	// Check file contents
+	updated, _ := os.ReadFile(tmpFile.Name())
+	var updatedClusters TestClustersFile
+	yaml.Unmarshal(updated, &updatedClusters)
+	assert.Len(t, updatedClusters.TestClusters, 2)
+	assert.Equal(t, "new-cluster", updatedClusters.TestClusters[1].Name)
 
-// 	// Test adding an existing cluster (should not duplicate)
-// 	err = AddClusterIfNotExists(tmpFile.Name(), "existing-cluster", ctx)
-// 	assert.NoError(t, err)
-// 	updated, _ = os.ReadFile(tmpFile.Name())
-// 	yaml.Unmarshal(updated, &updatedClusters)
-// 	assert.Len(t, updatedClusters.TestClusters, 2)
-// }
+	// Test adding an existing cluster (should not duplicate)
+	err = AddClusterIfNotExists(tmpFile.Name(), "existing-cluster", ctx)
+	assert.NoError(t, err)
+	updated, _ = os.ReadFile(tmpFile.Name())
+	yaml.Unmarshal(updated, &updatedClusters)
+	assert.Len(t, updatedClusters.TestClusters, 2)
+}
 
 func TestAddClusterIfNotExists_FileNotFound(t *testing.T) {
 	ctx := context.TODO()
