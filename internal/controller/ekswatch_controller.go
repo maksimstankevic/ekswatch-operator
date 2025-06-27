@@ -149,7 +149,6 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	var allClusters = make([][]string, len(ekswatch.Spec.AccountsToWatch))
 	var allAuthErrors = make([]error, len(ekswatch.Spec.AccountsToWatch))
-	var allListingErrors = make([]error, len(ekswatch.Spec.AccountsToWatch))
 	wg := sync.WaitGroup{}
 
 	for i, account := range ekswatch.Spec.AccountsToWatch {
@@ -161,7 +160,7 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			if sess == nil {
 				return
 			}
-			allListingErrors[i] = myeks.ListEKSClusters(sess, &allClusters[i], ctx)
+			myeks.ListEKSClusters(sess, &allClusters[i], ctx)
 		}(i, account)
 	}
 
@@ -197,13 +196,6 @@ func (r *EkswatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	for i, err := range allAuthErrors {
 		if err != nil {
 			logging.Error(err, "Error getting STS creds for account: "+ekswatch.Spec.AccountsToWatch[i].AccountID)
-		}
-	}
-
-	// Check for LISTING errors
-	for i, err := range allListingErrors {
-		if err != nil {
-			logging.Error(err, "Error listing EKS clusters in account: "+ekswatch.Spec.AccountsToWatch[i].AccountID)
 		}
 	}
 
