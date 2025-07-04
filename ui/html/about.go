@@ -20,6 +20,10 @@ func AboutPage() Node {
 			If(now.Second()%2 != 0, Text("It's an odd second!")),
 		),
 
+		P(Textf("First pod name is: %s", GetEkswatches()[0].Synced)),
+
+		// P(Textf("First pod name is: %s", "test-pod")),
+
 		Img(Class("max-w-sm"), Src("https://www.gomponents.com/images/logo.png"), Alt("gomponents logo")),
 	)
 }
